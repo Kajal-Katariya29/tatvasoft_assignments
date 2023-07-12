@@ -20,3 +20,661 @@
     
 </body>
 </html>
+
+
+use Tests\TestCase;
+use App\Http\Controllers\admin\BookListController;
+use App\Http\Requests\BookListRequest;
+use App\Models\BookList;
+use App\Models\BookMedia;
+use App\Models\VariantMapping;
+use App\Models\CategoryMapping;
+use Mockery;
+
+class BookListControllerTest extends TestCase
+{
+    public function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
+
+    public function testStoreMethod()
+    {
+        // Create a mock for the BookList model
+        $mockBookList = Mockery::mock(BookList::class);
+
+        // Create a mock for the BookMedia model
+        $mockBookMedia = Mockery::mock(BookMedia::class);
+
+        // Create a mock for the VariantMapping model
+        $mockVariantMapping = Mockery::mock(VariantMapping::class);
+
+        // Create a mock for the CategoryMapping model
+        $mockCategoryMapping = Mockery::mock(CategoryMapping::class);
+
+        // Create a mock for the BookListRequest
+        $mockRequest = Mockery::mock(BookListRequest::class);
+        $mockRequest->shouldReceive('name')->once()->andReturn('Sample Book');
+        $mockRequest->shouldReceive('description')->once()->andReturn('Sample Description');
+        $mockRequest->shouldReceive('author')->once()->andReturn('John Doe');
+        $mockRequest->shouldReceive('price')->once()->andReturn(19.99);
+        $mockRequest->shouldReceive('file')->once()->andReturn('sample_image.jpg');
+        $mockRequest->shouldReceive('input')->with('variant_id')->once()->andReturn([1, 2]);
+        $mockRequest->shouldReceive('input')->with('variant_type_name')->once()->andReturn(['Type 1', 'Type 2']);
+        $mockRequest->shouldReceive('input')->with('book_price')->once()->andReturn([9.99, 14.99]);
+        $mockRequest->shouldReceive('input')->with('subCategory_name')->once()->andReturn(3);
+
+        // Set expectations for the BookList model
+        $mockBookList->shouldReceive('create')->once()->andReturn($mockBookList);
+        $mockBookList->book_id = 1;
+
+        // Set expectations for the BookMedia model
+        $mockBookMedia->shouldReceive('create')->once()->andReturn($mockBookMedia);
+
+        // Set expectations for the VariantMapping model
+        $mockVariantMapping->shouldReceive('save')->times(2);
+
+        // Set expectations for the CategoryMapping model
+        $mockCategoryMapping->shouldReceive('create')->once()->andReturn($mockCategoryMapping);
+
+        // Create an instance of the BookListController with the mocked dependencies
+        $bookController = new BookListController($mockBookList, $mockBookMedia, $mockVariantMapping, $mockCategoryMapping);
+
+        // Call the store method
+        $response = $bookController->store($mockRequest);
+
+        // Assert the response
+        $this->assertNotNull($response);
+        $this->assertEquals('success', $response->getSession()->get('success'));
+    }
+}
+
+
+
+use Tests\TestCase;
+use App\Http\Controllers\admin\BookListController;
+use App\Http\Requests\BookListRequest;
+use App\Models\BookList;
+use App\Models\BookMedia;
+use App\Models\VariantMapping;
+use App\Models\CategoryMapping;
+
+class BookListControllerTest extends TestCase
+{
+    public function tearDown(): void
+    {
+        parent::tearDown();
+    }
+
+    public function testStoreMethod()
+    {
+        // Create a mock for the BookList model
+        $mockBookList = $this->mock(BookList::class);
+
+        // Create a mock for the BookMedia model
+        $mockBookMedia = $this->mock(BookMedia::class);
+
+        // Create a mock for the VariantMapping model
+        $mockVariantMapping = $this->mock(VariantMapping::class);
+
+        // Create a mock for the CategoryMapping model
+        $mockCategoryMapping = $this->mock(CategoryMapping::class);
+
+        // Create an instance of the BookListRequest with the provided data
+        $requestData = [
+            'name' => 'Sample Book',
+            'description' => 'Sample Description',
+            'author' => 'John Doe',
+            'price' => 19.99,
+            'images' => ['sample_image.jpg'],
+            'variant_id' => [1, 2],
+            'variant_type_name' => ['Type 1', 'Type 2'],
+            'book_price' => [9.99, 14.99],
+            'subCategory_name' => 3,
+        ];
+        $request = new BookListRequest($requestData);
+
+        // Set expectations for the BookList model
+        $mockBookList->shouldReceive('create')->once()->andReturn($mockBookList);
+        $mockBookList->book_id = 1;
+
+        // Set expectations for the BookMedia model
+        $mockBookMedia->shouldReceive('create')->once()->andReturn($mockBookMedia);
+
+        // Set expectations for the VariantMapping model
+        $mockVariantMapping->shouldReceive('save')->times(2);
+
+        // Set expectations for the CategoryMapping model
+        $mockCategoryMapping->shouldReceive('create')->once()->andReturn($mockCategoryMapping);
+
+        // Create an instance of the BookListController with the mocked dependencies
+        $bookController = new BookListController($mockBookList, $mockBookMedia, $mockVariantMapping, $mockCategoryMapping);
+
+        // Call the store method
+        $response = $bookController->store($request);
+
+        // Assert the response
+        $this->assertNotNull($response);
+        $this->assertEquals('success', $response->getSession()->get('success'));
+    }
+
+    private function mock($class)
+    {
+        return Mockery::mock($class);
+    }
+}
+
+
+use Tests\TestCase;
+use App\Http\Controllers\admin\BookListController;
+use App\Models\BookList;
+use App\Models\BookMedia;
+use App\Models\Variant;
+use App\Models\VariantType;
+use App\Models\VariantMapping;
+use App\Models\CategoryList;
+use App\Models\CategoryMapping;
+use App\Http\Requests\BookListRequest;
+use Mockery;
+
+class BookListControllerTest extends TestCase
+{
+    public function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
+
+    public function testCreateMethod()
+    {
+        // Create a mock for the Variant model
+        $mockVariant = Mockery::mock(Variant::class);
+        $variantTypes = collect([
+            1 => 'Variant 1',
+            2 => 'Variant 2'
+        ]);
+        $mockVariant->shouldReceive('all')->once()->andReturn($variantTypes);
+        
+        // Create a mock for the VariantType model
+        $mockVariantType = Mockery::mock(VariantType::class);
+        $variantTypeNames = collect([
+            1 => 'Variant Type 1',
+            2 => 'Variant Type 2'
+        ]);
+        $mockVariantType->shouldReceive('all')->once()->andReturn($variantTypeNames);
+        
+        // Create a mock for the CategoryList model
+        $mockCategoryList = Mockery::mock(CategoryList::class);
+        $categories = collect([
+            1 => 'Category 1',
+            2 => 'Category 2'
+        ]);
+        $mockCategoryList->shouldReceive('all')->once()->andReturn($categories);
+        $mockCategoryList->shouldReceive('where')->once()->andReturn($categories);
+        
+        // Create an instance of the BookListController with the mocked dependencies
+        $bookController = new BookListController(
+            new BookList(),
+            new BookMedia(),
+            $mockVariant,
+            $mockVariantType,
+            $mockCategoryList,
+            new CategoryMapping()
+        );
+        
+        // Call the create method
+        $response = $bookController->create();
+        
+        // Assert the response
+        $this->assertNotNull($response);
+        $this->assertEquals('admin.BookList.create', $response->getName());
+        $this->assertArrayHasKey('variantTypes', $response->getData());
+        $this->assertArrayHasKey('variantTypeNames', $response->getData());
+        $this->assertArrayHasKey('categories', $response->getData());
+    }
+
+    public function testStoreMethod()
+    {
+        // Create a mock for the BookList model
+        $mockBookList = Mockery::mock(BookList::class);
+        
+        // Create a mock for the BookMedia model
+        $mockBookMedia = Mockery::mock(BookMedia::class);
+        
+        // Create a mock for the Variant model
+        $mockVariant = Mockery::mock(Variant::class);
+        
+        // Create a mock for the VariantType model
+        $mockVariantType = Mockery::mock(VariantType::class);
+        
+        // Create a mock for the VariantMapping model
+        $mockVariantMapping = Mockery::mock(VariantMapping::class);
+        
+        // Create a mock for the CategoryMapping model
+        $mockCategoryMapping = Mockery::mock(CategoryMapping::class);
+        
+        // Create an instance of the BookListRequest with the provided data
+        $requestData = [
+            'name' => 'Sample Book',
+            'description' => 'Sample Description',
+            'author' => 'John Doe',
+            'price' => 19.99,
+            'images' => ['image1.jpg', 'image2.jpg'],
+            'variant_id' => [1, 2],
+            'variant_type_name' => ['Type 1', 'Type 2'],
+            'book_price' => [9.99, 14.99],
+            'subCategory_name' => 3,
+        ];
+        $request = new BookListRequest($requestData);
+        
+        // Set expectations for the BookList model
+        $mockBookList->shouldReceive('create')->once()->andReturn($mockBookList);
+        $mockBookList->book_id = 1;
+        
+        // Set expectations for the BookMedia model
+        $mockBookMedia->shouldReceive('create')->twice()->andReturn($mockBookMedia);
+        
+        // Set expectations for the Variant model
+        $mockVariant->shouldReceive('findOrFail')->twice()->andReturn($mockVariant);
+        
+        // Set expectations for the VariantType model
+        $mockVariantType->shouldReceive('findOrFail')->twice()->andReturn($mockVariantType);
+        
+        // Set expectations for the VariantMapping model
+        $mockVariantMapping->shouldReceive('save')->twice();
+        
+        // Set expectations for the CategoryMapping model
+        $mockCategoryMapping->shouldReceive('create')->once()->andReturn($mockCategoryMapping);
+        
+        // Create an instance of the BookListController with the mocked dependencies
+        $bookController = new BookListController(
+            $mockBookList,
+            $mockBookMedia,
+            $mockVariant,
+            $mockVariantType,
+            new CategoryList(),
+            $mockCategoryMapping
+        );
+        
+        // Call the store method
+        $response = $bookController->store($request);
+        
+        // Assert the response
+        $this->assertNotNull($response);
+        $this->assertEquals('Illuminate\Http\RedirectResponse', get_class($response));
+        $this->assertEquals('books.index', $response->getSession()->get('route'));
+        $this->assertEquals('success', $response->getSession()->get('success'));
+    }
+}
+
+
+namespace App\Http\Controllers\admin;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\BookList;
+use App\Models\BookMedia;
+use App\Models\Variant;
+use App\Models\VariantType;
+use App\Models\VariantMapping;
+use App\Models\CategoryList;
+use App\Models\CategoryMapping;
+use App\Http\Requests\BookListRequest;
+
+class BookListController extends Controller
+{
+    protected $bookList;
+    protected $bookMedia;
+    protected $variant;
+    protected $variantType;
+    protected $categoryList;
+    protected $categoryMapping;
+
+    public function __construct(
+        BookList $bookList,
+        BookMedia $bookMedia,
+        Variant $variant,
+        VariantType $variantType,
+        CategoryList $categoryList,
+        CategoryMapping $categoryMapping
+    ) {
+        $this->middleware('auth');
+        $this->bookList = $bookList;
+        $this->bookMedia = $bookMedia;
+        $this->variant = $variant;
+        $this->variantType = $variantType;
+        $this->categoryList = $categoryList;
+        $this->categoryMapping = $categoryMapping;
+    }
+
+    public function create()
+    {
+        $variantTypes = $this->variant->all()->pluck('variant_type', 'variant_id');
+        $variantTypeNames = $this->variantType->all()->pluck('variant_type_name', 'variant_type_id');
+        $categories = $this->categoryList->all()->where('category_parent_id', '0')->pluck('category_name', 'cateogery_id');
+
+        return view('admin.BookList.create', compact('variantTypes', 'variantTypeNames', 'categories'));
+    }
+
+    public function store(BookListRequest $request)
+    {
+        $validatedData = $request->validated();
+
+        $book = $this->bookList->create([
+            'name' => $validatedData['name'],
+            'description' => $validatedData['description'],
+            'author' => $validatedData['author'],
+            'price' => $validatedData['price'],
+        ]);
+
+        if ($images = $request->file('images')) {
+            foreach ($images as $image) {
+                $filename = $image->getClientOriginalName();
+                $image->move(public_path('images/Book-Images/' . $book->book_id . "/"), $filename);
+                $this->bookMedia->create([
+                    'book_id' => $book->book_id,
+                    'media_name' => $filename
+                ]);
+            }
+        }
+
+        $variantIds = $validatedData['variant_id'];
+        $variantTypeNames = $validatedData['variant_type_name'];
+        foreach ($variantIds as $key => $variantId) {
+            $variantTypeName = $variantTypeNames[$key];
+
+            if ($variantId !== null) {
+                $variantMapping = new VariantMapping();
+                $variantMapping->variant_id = $variantId;
+                $variantMapping->book_id = $book->book_id;
+                $variantMapping->variant_type_id = $variantTypeName;
+                $variantMapping->book_price = $validatedData['book_price'][$key];
+                $variantMapping->save();
+            }
+        }
+
+        $categoryId = $validatedData['subCategory_name'] ?? $validatedData['category_name'];
+        $this->categoryMapping->create([
+            'book_id' => $book->book_id,
+            'cateogery_id' => $categoryId
+        ]);
+
+        return redirect()->route('books.index')->with('success', 'Book Record created successfully!');
+    }
+}
+
+public function testEditMethod()
+{
+    // Create a mock for the BookList model
+    $mockBookList = Mockery::mock(BookList::class);
+    $bookId = 1;
+    $mockBookList->shouldReceive('where')->with('book_id', $bookId)->andReturnSelf();
+    $mockBookList->shouldReceive('with')->with('variants', 'bookMedia', 'categories')->andReturnSelf();
+    $mockBookList->shouldReceive('first')->andReturn((object) [
+        'book_id' => $bookId,
+        'name' => 'Sample Book',
+        'description' => 'Sample Description',
+        'author' => 'John Doe',
+        'price' => 19.99,
+        'variants' => [],
+        'bookMedia' => [],
+        'categories' => (object) [
+            'cateogery_id' => 1,
+            'subCategory' => []
+        ]
+    ]);
+
+    // Create a mock for the CategoryList model
+    $mockCategoryList = Mockery::mock(CategoryList::class);
+    $mockCategoryList->shouldReceive('where')->once()->andReturnSelf();
+    $mockCategoryList->shouldReceive('with')->with('subCategory')->andReturnSelf();
+    $mockCategoryList->shouldReceive('get')->andReturn(collect([]));
+
+    // Create a mock for the VariantMapping model
+    $mockVariantMapping = Mockery::mock(VariantMapping::class);
+    $mockVariantMapping->shouldReceive('get')->andReturn(collect([]));
+
+    // Create a mock for the Variant model
+    $mockVariant = Mockery::mock(Variant::class);
+    $mockVariant->shouldReceive('select')->with('variant_id', 'variant_type')->andReturnSelf();
+    $mockVariant->shouldReceive('get')->andReturn(collect([]));
+
+    // Create a mock for the VariantType model
+    $mockVariantType = Mockery::mock(VariantType::class);
+    $mockVariantType->shouldReceive('select')->with('variant_type_id', 'variant_type_name')->andReturnSelf();
+    $mockVariantType->shouldReceive('get')->andReturn(collect([]));
+
+    // Create an instance of the BookListController with the mocked dependencies
+    $bookController = new BookListController(
+        $mockBookList,
+        new BookMedia(),
+        $mockVariant,
+        $mockVariantType,
+        $mockCategoryList,
+        $mockVariantMapping
+    );
+
+    // Call the edit method
+    $response = $bookController->edit($bookId);
+
+    // Assert the response
+    $this->assertNotNull($response);
+    $this->assertEquals('admin.BookList.edit', $response->getName());
+    $this->assertArrayHasKey('bookData', $response->getData());
+    $this->assertArrayHasKey('variant_type', $response->getData());
+    $this->assertArrayHasKey('variant_type_name', $response->getData());
+    $this->assertArrayHasKey('category_name', $response->getData());
+    $this->assertArrayHasKey('subCatData', $response->getData());
+    $this->assertArrayHasKey('catData', $response->getData());
+    $this->assertArrayHasKey('subCategory', $response->getData());
+    $this->assertArrayHasKey('subData', $response->getData());
+    $this->assertArrayHasKey('variants', $response->getData());
+}
+
+
+public function testEditMethod()
+{
+    // Create a mock for the BookList model
+    $mockBookList = Mockery::mock(BookList::class);
+    $bookId = 1;
+    $mockBookList->shouldReceive('where')->with('book_id', $bookId)->andReturnTrue();
+    $mockBookList->shouldReceive('with')->with('variants', 'bookMedia', 'categories')->andReturnTrue();
+    $mockBookList->shouldReceive('first')->andReturn((object) [
+        'book_id' => $bookId,
+        'name' => 'Sample Book',
+        'description' => 'Sample Description',
+        'author' => 'John Doe',
+        'price' => 19.99,
+        'variants' => [],
+        'bookMedia' => [],
+        'categories' => (object) [
+            'cateogery_id' => 1,
+            'subCategory' => []
+        ]
+    ]);
+
+    // Create a mock for the CategoryList model
+    $mockCategoryList = Mockery::mock(CategoryList::class);
+    $mockCategoryList->shouldReceive('where')->once()->andReturnTrue();
+    $mockCategoryList->shouldReceive('with')->with('subCategory')->andReturnTrue();
+    $mockCategoryList->shouldReceive('get')->andReturn(collect([]));
+
+    // Create a mock for the VariantMapping model
+    $mockVariantMapping = Mockery::mock(VariantMapping::class);
+    $mockVariantMapping->shouldReceive('get')->andReturn(collect([]));
+
+    // Create a mock for the Variant model
+    $mockVariant = Mockery::mock(Variant::class);
+    $mockVariant->shouldReceive('select')->with('variant_id', 'variant_type')->andReturnTrue();
+    $mockVariant->shouldReceive('get')->andReturn(collect([]));
+
+    // Create a mock for the VariantType model
+    $mockVariantType = Mockery::mock(VariantType::class);
+    $mockVariantType->shouldReceive('select')->with('variant_type_id', 'variant_type_name')->andReturnTrue();
+    $mockVariantType->shouldReceive('get')->andReturn(collect([]));
+
+    // Create an instance of the BookListController with the mocked dependencies
+    $bookController = new BookListController(
+        $mockBookList,
+        new BookMedia(),
+        $mockVariant,
+        $mockVariantType,
+        $mockCategoryList,
+        $mockVariantMapping
+    );
+
+    // Call the edit method
+    $response = $bookController->edit($bookId);
+
+    // Assert the response
+    $this->assertNotNull($response);
+    $this->assertEquals('admin.BookList.edit', $response->getName());
+    $this->assertArrayHasKey('bookData', $response->getData());
+    $this->assertArrayHasKey('variant_type', $response->getData());
+    $this->assertArrayHasKey('variant_type_name', $response->getData());
+    $this->assertArrayHasKey('category_name', $response->getData());
+    $this->assertArrayHasKey('subCatData', $response->getData());
+    $this->assertArrayHasKey('catData', $response->getData());
+    $this->assertArrayHasKey('subCategory', $response->getData());
+    $this->assertArrayHasKey('subData', $response->getData());
+    $this->assertArrayHasKey('variants', $response->getData());
+}
+
+
+public function testUpdateMethod()
+{
+    // Create a mock for the BookList model
+    $mockBookList = Mockery::mock(BookList::class);
+    $bookId = 1;
+    $requestData = [
+        'name' => 'Updated Book',
+        'description' => 'Updated Description',
+        'author' => 'John Doe',
+        'price' => 29.99,
+        'images' => ['image1.jpg', 'image2.jpg'],
+        'variant_id' => [1, 2],
+        'variant_type_name' => ['Type 1', 'Type 2'],
+        'book_price' => [19.99, 24.99],
+        'removed_variant_mapping_id' => '1,2',
+        'subCategory_name' => 3,
+    ];
+    $request = new BookListRequest($requestData);
+    
+    // Set expectations for the BookList model
+    $mockBookList->shouldReceive('where')->with('book_id', $bookId)->andReturnSelf();
+    $mockBookList->shouldReceive('update')->with($requestData)->andReturn(1);
+
+    // Create a mock for the BookMedia model
+    $mockBookMedia = Mockery::mock(BookMedia::class);
+    $mockBookMedia->shouldReceive('create')->twice()->andReturn($mockBookMedia);
+    
+    // Set expectations for the VariantMapping model
+    $mockVariantMapping = Mockery::mock(VariantMapping::class);
+    $mockVariantMapping->shouldReceive('whereIn')->with('variant_mapping_id', [1, 2])->andReturnSelf();
+    $mockVariantMapping->shouldReceive('delete')->once();
+    $mockVariantMapping->shouldReceive('where')->with('variant_mapping_id', Mockery::any())->andReturnSelf();
+    $mockVariantMapping->shouldReceive('first')->andReturn(null);
+    $mockVariantMapping->shouldReceive('save')->twice();
+    
+    // Set expectations for the CategoryMapping model
+    $mockCategoryMapping = Mockery::mock(CategoryMapping::class);
+    $mockCategoryMapping->shouldReceive('where')->with('book_id', $bookId)->andReturnSelf();
+    $mockCategoryMapping->shouldReceive('update')->with([
+        'book_id' => $bookId,
+        'cateogery_id' => $requestData['subCategory_name']
+    ])->once();
+    
+    // Create an instance of the BookListController with the mocked dependencies
+    $bookController = new BookListController(
+        $mockBookList,
+        $mockBookMedia,
+        new Variant(),
+        new VariantType(),
+        new CategoryList(),
+        $mockCategoryMapping
+    );
+    
+    // Call the update method
+    $response = $bookController->update($request, $bookId);
+    
+    // Assert the response
+    $this->assertNotNull($response);
+    $this->assertEquals('Illuminate\Http\RedirectResponse', get_class($response));
+    $this->assertEquals('books.index', $response->getSession()->get('route'));
+    $this->assertEquals('success', $response->getSession()->get('success'));
+}
+
+public function testDestroyMethod()
+{
+    // Create a mock for the BookList model
+    $mockBookList = Mockery::mock(BookList::class);
+    $bookId = 1;
+    $mockBookList->shouldReceive('where')->with('book_id', $bookId)->andReturnSelf();
+    $mockBookList->shouldReceive('delete')->andReturn(1);
+
+    // Create a mock for the CategoryMapping model
+    $mockCategoryMapping = Mockery::mock(CategoryMapping::class);
+    $mockCategoryMapping->shouldReceive('where')->with('book_id', $bookId)->andReturnSelf();
+    $mockCategoryMapping->shouldReceive('delete')->andReturn(1);
+
+    // Create a mock for the VariantMapping model
+    $mockVariantMapping = Mockery::mock(VariantMapping::class);
+    $mockVariantMapping->shouldReceive('where')->with('book_id', $bookId)->andReturnSelf();
+    $mockVariantMapping->shouldReceive('delete')->andReturn(1);
+
+    // Create an instance of the BookListController with the mocked dependencies
+    $bookController = new BookListController(
+        $mockBookList,
+        new BookMedia(),
+        new Variant(),
+        new VariantType(),
+        new CategoryList(),
+        $mockCategoryMapping,
+        $mockVariantMapping
+    );
+
+    // Call the destroy method
+    $response = $bookController->destroy($bookId);
+
+    // Assert the response
+    $this->assertNotNull($response);
+    $this->assertEquals('Illuminate\Http\RedirectResponse', get_class($response));
+    $this->assertEquals('books.index', $response->getSession()->get('route'));
+    $this->assertEquals('success', $response->getSession()->get('success'));
+}
+
+public function testDeleteImageMethod()
+{
+    // Create a mock for the BookMedia model
+    $mockBookMedia = Mockery::mock(BookMedia::class);
+    $bookMediaId = 1;
+    $bookId = 1;
+    $mediaName = 'image1.jpg';
+    $mockBookMedia->shouldReceive('where')->with('book_media_id', $bookMediaId)->andReturnSelf();
+    $mockBookMedia->shouldReceive('first')->andReturn((object) [
+        'book_id' => $bookId,
+        'media_name' => $mediaName,
+    ]);
+    $mockBookMedia->shouldReceive('delete')->andReturn(1);
+
+    // Create an instance of the BookListController with the mocked dependencies
+    $bookController = new BookListController(
+        new BookList(),
+        $mockBookMedia,
+        new Variant(),
+        new VariantType(),
+        new CategoryList(),
+        new CategoryMapping(),
+        new VariantMapping()
+    );
+
+    // Call the deleteImage method
+    $response = $bookController->deleteImage($bookMediaId);
+
+    // Assert the response
+    $this->assertNotNull($response);
+    $this->assertInstanceOf(\Illuminate\Http\JsonResponse::class, $response);
+    $this->assertEquals(200, $response->getStatusCode());
+    $this->assertEquals(json_encode(['status', 'success']), $response->getContent());
+}
